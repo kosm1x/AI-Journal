@@ -81,6 +81,19 @@ The application now features an AI-powered Intelligence Layer that provides the 
 - Builds a semantic network of journal content
 - Enables discovery of patterns and insights
 
+## Environment Setup
+
+1. Create a `.env` file in the root directory using the `.env.example` template
+2. Add your environment variables:
+   ```
+   PORT=5004
+   MONGODB_URI=your_mongodb_connection_string
+   JWT_SECRET=your_jwt_secret
+   OPENAI_API_KEY=your_openai_api_key
+   OPENAI_MODEL=gpt-4-turbo
+   ```
+3. Never commit the `.env` file to version control
+
 ## Configuration
 The application uses a configuration file approach:
 
