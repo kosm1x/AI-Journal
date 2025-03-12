@@ -4,19 +4,23 @@
 COMMIT Journal is a personal journaling application that helps users track their thoughts, goals, tasks, and personal growth using the COMMIT methodology. The application uses MongoDB for data storage and provides a modern web interface for users to interact with their journal entries.
 
 ## Current Status
-The backend API and database integration are now complete and functional. The server successfully connects to MongoDB Atlas and all API endpoints for user authentication and journal entries are working.
+The backend API and database integration are now complete and functional. The Intelligence Layer has been implemented with OpenAI integration for natural language processing capabilities. The server successfully connects to MongoDB Atlas and all API endpoints for user authentication, journal entries, and AI analysis are working.
 
 ## Features Implemented
 - **User Authentication**: Register and login with JWT token-based authentication
 - **Journal Entries**: Create, read, update, and delete journal entries
 - **Entry Types**: Organize entries by type (Context, Objectives, Mindmap, Ideate, Track)
 - **Tags**: Add custom tags to entries for better organization
-- **Weekly Summaries**: Generate weekly summaries of journal entries
+- **AI Analysis**: Automatic analysis of journal entries for emotions, goals, tasks, and themes
+- **Smart Classification**: AI-powered classification of entry types based on content
+- **Semantic Search**: Search journal entries using natural language queries
+- **Weekly Summaries**: Generate AI-enhanced weekly summaries of journal entries
 
 ## Tech Stack
 - **Backend**: Node.js with Express
 - **Database**: MongoDB Atlas (cloud-hosted)
 - **Authentication**: JWT (JSON Web Tokens) with bcryptjs for password hashing
+- **AI Integration**: OpenAI API for natural language processing
 - **Development**: Nodemon for auto-restarting during development
 - **Testing**: Simple HTML/JS test client for API verification
 
@@ -27,7 +31,7 @@ The backend API and database integration are now complete and functional. The se
 │   ├── controllers/    # Request handlers for users and journal entries
 │   ├── models/         # MongoDB schema models
 │   ├── routes/         # API route definitions
-│   ├── utils/          # Utility functions including database connection
+│   ├── utils/          # Utility functions including database connection and OpenAI integration
 │   ├── middleware/     # Express middleware including auth protection
 │   └── config/         # Configuration settings
 ├── .env                # Environment variables (not tracked in git)
@@ -51,16 +55,42 @@ The following API endpoints have been implemented:
 - `PUT /api/journal/:id` - Update a journal entry
 - `DELETE /api/journal/:id` - Delete a journal entry
 - `GET /api/journal/summary/weekly` - Get weekly summary of journal entries
+- `GET /api/journal/search` - Search entries using natural language queries
+- `GET /api/journal/tag/:tag` - Get entries by tag
+- `GET /api/journal/type/:type` - Get entries by type
+
+## Intelligence Layer
+The application now features an AI-powered Intelligence Layer that provides the following capabilities:
+
+### Content Analysis
+- **Emotion Detection**: Identifies emotions expressed in journal entries
+- **Goal Extraction**: Extracts goals mentioned in the content
+- **Task Identification**: Identifies tasks and to-dos from entries
+- **Theme Recognition**: Recognizes key themes and concepts
+
+### Smart Classification
+- Automatically classifies entries into the COMMIT framework categories:
+  - **C**ontext: Background information and circumstances
+  - **O**bjectives: Goals and desired outcomes
+  - **M**indmap: Brainstorming and idea connections
+  - **I**deate: Creative solutions and possibilities
+  - **T**rack: Progress monitoring and reflection
+
+### Knowledge Graph
+- Creates connections between related entries
+- Builds a semantic network of journal content
+- Enables discovery of patterns and insights
 
 ## Configuration
-The application now uses a configuration file approach instead of relying solely on environment variables:
+The application uses a configuration file approach:
 
 ```javascript
 // src/config/config.js
 module.exports = {
-  PORT: 5002,
+  PORT: 5004,
   MONGODB_URI: 'your_mongodb_connection_string',
-  JWT_SECRET: 'your_jwt_secret'
+  JWT_SECRET: 'your_jwt_secret',
+  OPENAI_API_KEY: 'your_openai_api_key'
 };
 ```
 
@@ -70,6 +100,7 @@ module.exports = {
 - Node.js (v14 or higher)
 - npm or yarn
 - MongoDB Atlas account
+- OpenAI API key
 
 ### Installation
 1. Clone the repository
@@ -83,7 +114,7 @@ module.exports = {
    npm install
    ```
 
-3. Configure the application by updating the `src/config/config.js` file with your MongoDB connection string and JWT secret
+3. Configure the application by updating the `src/config/config.js` file with your MongoDB connection string, JWT secret, and OpenAI API key
 
 4. Start the development server
    ```
@@ -101,15 +132,17 @@ A simple HTML/JavaScript test client (`test-client.html`) has been created to te
 1. Register a new user
 2. Login with existing credentials
 3. Create journal entries with content, type, and tags
-4. View all journal entries
-5. Get weekly summaries
+4. View all journal entries with AI analysis results
+5. Search entries using natural language queries
+6. Filter entries by tags and entry types
+7. Get weekly AI-generated summaries
 
 ## Next Steps
-- Implement the NLP features for emotion detection and entry classification
 - Develop a full-featured frontend interface
 - Add data visualization for journal insights
-- Implement AI-assisted journaling features
+- Implement adaptive learning to improve AI analysis over time
 - Add support for image and file attachments
+- Create mobile application for on-the-go journaling
 
 ## Contributing
 This project is currently in active development. If you're interested in contributing, please reach out to the project maintainers.

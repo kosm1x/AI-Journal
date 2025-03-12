@@ -28,7 +28,7 @@
       display: block;
       margin-bottom: 5px;
     }
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 8px;
       box-sizing: border-box;
@@ -40,6 +40,7 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
+      margin-right: 5px;
     }
     button:hover {
       background-color: #45a049;
@@ -49,6 +50,62 @@
       padding: 10px;
       border-radius: 5px;
       overflow-x: auto;
+    }
+    .tabs {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      border-bottom: none;
+      border-radius: 5px 5px 0 0;
+    }
+    .tab.active {
+      background-color: #fff;
+      border-bottom: 1px solid #fff;
+      margin-bottom: -1px;
+    }
+    .tab-content {
+      display: none;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 0 5px 5px 5px;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .metadata-section {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+    }
+    .metadata-item {
+      margin-bottom: 5px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 7px;
+      background-color: #e0e0e0;
+      border-radius: 10px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+    .emotion-badge {
+      background-color: #ffcccc;
+    }
+    .goal-badge {
+      background-color: #ccffcc;
+    }
+    .task-badge {
+      background-color: #ccccff;
+    }
+    .theme-badge {
+      background-color: #ffffcc;
     }
   </style>
 </head>
@@ -98,11 +155,12 @@
       <h2>3. Create Journal Entry</h2>
       <div class="form-group">
         <label for="entry-content">Content:</label>
-        <textarea id="entry-content" rows="5">Today I started working on my new project. I feel excited about the possibilities.</textarea>
+        <textarea id="entry-content" rows="5">Today I started working on my new project. I feel excited about the possibilities but also a bit anxious about the timeline. My goal is to finish the prototype by next Friday and present it to the team. I need to focus on the core functionality first and then add the extra features if time permits.</textarea>
       </div>
       <div class="form-group">
-        <label for="entry-type">Entry Type:</label>
+        <label for="entry-type">Entry Type (optional - AI will classify if left as 'Auto-detect'):</label>
         <select id="entry-type">
+          <option value="">Auto-detect</option>
           <option value="context">Context</option>
           <option value="objectives">Objectives</option>
           <option value="mindmap">Mindmap</option>
@@ -123,11 +181,63 @@
     </div>
 
     <div class="card">
-      <h2>4. Get Journal Entries</h2>
-      <button onclick="getEntries()">Get Entries</button>
-      <div class="form-group">
-        <h3>Response:</h3>
-        <pre id="get-entries-response"></pre>
+      <h2>4. Journal Entries</h2>
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('all-entries')">All Entries</div>
+        <div class="tab" onclick="switchTab('search-entries')">Search</div>
+        <div class="tab" onclick="switchTab('filter-by-tag')">Filter by Tag</div>
+        <div class="tab" onclick="switchTab('filter-by-type')">Filter by Type</div>
+      </div>
+      
+      <div id="all-entries" class="tab-content active">
+        <button onclick="getEntries()">Get All Entries</button>
+        <div class="form-group">
+          <h3>Response:</h3>
+          <div id="entries-list"></div>
+        </div>
+      </div>
+      
+      <div id="search-entries" class="tab-content">
+        <div class="form-group">
+          <label for="search-query">Search Query:</label>
+          <input type="text" id="search-query" placeholder="Enter search terms...">
+        </div>
+        <button onclick="searchEntries()">Search</button>
+        <div class="form-group">
+          <h3>Results:</h3>
+          <div id="search-results"></div>
+        </div>
+      </div>
+      
+      <div id="filter-by-tag" class="tab-content">
+        <div class="form-group">
+          <label for="filter-tag">Tag:</label>
+          <input type="text" id="filter-tag" placeholder="Enter tag...">
+        </div>
+        <button onclick="getEntriesByTag()">Filter</button>
+        <div class="form-group">
+          <h3>Results:</h3>
+          <div id="tag-results"></div>
+        </div>
+      </div>
+      
+      <div id="filter-by-type" class="tab-content">
+        <div class="form-group">
+          <label for="filter-type">Entry Type:</label>
+          <select id="filter-type">
+            <option value="context">Context</option>
+            <option value="objectives">Objectives</option>
+            <option value="mindmap">Mindmap</option>
+            <option value="ideate">Ideate</option>
+            <option value="track">Track</option>
+            <option value="unclassified">Unclassified</option>
+          </select>
+        </div>
+        <button onclick="getEntriesByType()">Filter</button>
+        <div class="form-group">
+          <h3>Results:</h3>
+          <div id="type-results"></div>
+        </div>
       </div>
     </div>
 
@@ -144,11 +254,142 @@
   <script>
     // Store token after login
     let authToken = '';
-    const API_BASE_URL = 'http://localhost:5002/api';
+    const API_BASE_URL = 'http://localhost:5004/api';
 
     // Helper function to display JSON response
     function displayResponse(elementId, data) {
       document.getElementById(elementId).textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Helper function to switch tabs
+    function switchTab(tabId) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Deactivate all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Activate selected tab and content
+      document.getElementById(tabId).classList.add('active');
+      document.querySelector(`.tab[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    }
+
+    // Helper function to display entry with metadata
+    function displayEntry(entry) {
+      const entryDiv = document.createElement('div');
+      entryDiv.className = 'card';
+      
+      // Create entry header
+      const header = document.createElement('h3');
+      const date = new Date(entry.createdAt).toLocaleDateString();
+      header.textContent = `Entry from ${date} (${entry.entryType})`;
+      entryDiv.appendChild(header);
+      
+      // Create content section
+      const content = document.createElement('p');
+      content.textContent = entry.content;
+      entryDiv.appendChild(content);
+      
+      // Create tags section
+      if (entry.tags && entry.tags.length > 0) {
+        const tagsDiv = document.createElement('div');
+        tagsDiv.innerHTML = '<strong>Tags:</strong> ';
+        entry.tags.forEach(tag => {
+          const tagSpan = document.createElement('span');
+          tagSpan.className = 'badge';
+          tagSpan.textContent = tag;
+          tagsDiv.appendChild(tagSpan);
+        });
+        entryDiv.appendChild(tagsDiv);
+      }
+      
+      // Create metadata section if available
+      if (entry.metadata) {
+        const metadataDiv = document.createElement('div');
+        metadataDiv.className = 'metadata-section';
+        metadataDiv.innerHTML = '<h4>AI Analysis</h4>';
+        
+        // Add emotions
+        if (entry.metadata.emotions && entry.metadata.emotions.length > 0) {
+          const emotionsDiv = document.createElement('div');
+          emotionsDiv.className = 'metadata-item';
+          emotionsDiv.innerHTML = '<strong>Emotions:</strong> ';
+          entry.metadata.emotions.forEach(emotion => {
+            const emotionSpan = document.createElement('span');
+            emotionSpan.className = 'badge emotion-badge';
+            emotionSpan.textContent = emotion.name;
+            emotionsDiv.appendChild(emotionSpan);
+          });
+          metadataDiv.appendChild(emotionsDiv);
+        }
+        
+        // Add goals
+        if (entry.metadata.goals && entry.metadata.goals.length > 0) {
+          const goalsDiv = document.createElement('div');
+          goalsDiv.className = 'metadata-item';
+          goalsDiv.innerHTML = '<strong>Goals:</strong> ';
+          entry.metadata.goals.forEach(goal => {
+            const goalSpan = document.createElement('span');
+            goalSpan.className = 'badge goal-badge';
+            goalSpan.textContent = goal.description;
+            goalsDiv.appendChild(goalSpan);
+          });
+          metadataDiv.appendChild(goalsDiv);
+        }
+        
+        // Add tasks
+        if (entry.metadata.tasks && entry.metadata.tasks.length > 0) {
+          const tasksDiv = document.createElement('div');
+          tasksDiv.className = 'metadata-item';
+          tasksDiv.innerHTML = '<strong>Tasks:</strong> ';
+          entry.metadata.tasks.forEach(task => {
+            const taskSpan = document.createElement('span');
+            taskSpan.className = 'badge task-badge';
+            taskSpan.textContent = task.description;
+            tasksDiv.appendChild(taskSpan);
+          });
+          metadataDiv.appendChild(tasksDiv);
+        }
+        
+        // Add themes
+        if (entry.metadata.themes && entry.metadata.themes.length > 0) {
+          const themesDiv = document.createElement('div');
+          themesDiv.className = 'metadata-item';
+          themesDiv.innerHTML = '<strong>Key Concepts:</strong> ';
+          entry.metadata.themes.forEach(theme => {
+            const themeSpan = document.createElement('span');
+            themeSpan.className = 'badge theme-badge';
+            themeSpan.textContent = theme;
+            themesDiv.appendChild(themeSpan);
+          });
+          metadataDiv.appendChild(themesDiv);
+        }
+        
+        entryDiv.appendChild(metadataDiv);
+      }
+      
+      // Add buttons for entry operations
+      const buttonsDiv = document.createElement('div');
+      buttonsDiv.style.marginTop = '10px';
+      
+      const viewButton = document.createElement('button');
+      viewButton.textContent = 'View Details';
+      viewButton.onclick = () => getEntryById(entry._id);
+      buttonsDiv.appendChild(viewButton);
+      
+      const deleteButton = document.createElement('button');
+      deleteButton.textContent = 'Delete';
+      deleteButton.style.backgroundColor = '#f44336';
+      deleteButton.onclick = () => deleteEntry(entry._id);
+      buttonsDiv.appendChild(deleteButton);
+      
+      entryDiv.appendChild(buttonsDiv);
+      
+      return entryDiv;
     }
 
     // Register user
@@ -228,6 +469,9 @@
 
         const data = await response.json();
         displayResponse('create-entry-response', data);
+        
+        // Refresh entries list
+        getEntries();
       } catch (error) {
         displayResponse('create-entry-response', { error: error.message });
       }
@@ -249,9 +493,190 @@
         });
 
         const data = await response.json();
-        displayResponse('get-entries-response', data);
+        
+        // Display entries
+        const entriesList = document.getElementById('entries-list');
+        entriesList.innerHTML = '';
+        
+        if (data.length === 0) {
+          entriesList.textContent = 'No entries found.';
+          return;
+        }
+        
+        data.forEach(entry => {
+          entriesList.appendChild(displayEntry(entry));
+        });
       } catch (error) {
-        displayResponse('get-entries-response', { error: error.message });
+        document.getElementById('entries-list').innerHTML = `<pre>${JSON.stringify({ error: error.message }, null, 2)}</pre>`;
+      }
+    }
+
+    // Get entry by ID
+    async function getEntryById(id) {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal/${id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        const data = await response.json();
+        alert(`Entry details:\n${JSON.stringify(data, null, 2)}`);
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
+    }
+
+    // Delete entry
+    async function deleteEntry(id) {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      if (!confirm('Are you sure you want to delete this entry?')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        const data = await response.json();
+        alert(`Entry deleted: ${data.message}`);
+        
+        // Refresh entries list
+        getEntries();
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
+    }
+
+    // Search entries
+    async function searchEntries() {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      const query = document.getElementById('search-query').value;
+      
+      if (!query) {
+        alert('Please enter a search query.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal/search?query=${encodeURIComponent(query)}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        const data = await response.json();
+        
+        // Display search results
+        const searchResults = document.getElementById('search-results');
+        searchResults.innerHTML = '';
+        
+        if (data.length === 0) {
+          searchResults.textContent = 'No entries found matching your search.';
+          return;
+        }
+        
+        data.forEach(entry => {
+          searchResults.appendChild(displayEntry(entry));
+        });
+      } catch (error) {
+        document.getElementById('search-results').innerHTML = `<pre>${JSON.stringify({ error: error.message }, null, 2)}</pre>`;
+      }
+    }
+
+    // Get entries by tag
+    async function getEntriesByTag() {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      const tag = document.getElementById('filter-tag').value;
+      
+      if (!tag) {
+        alert('Please enter a tag to filter by.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal/tag/${encodeURIComponent(tag)}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        const data = await response.json();
+        
+        // Display tag results
+        const tagResults = document.getElementById('tag-results');
+        tagResults.innerHTML = '';
+        
+        if (data.length === 0) {
+          tagResults.textContent = `No entries found with tag "${tag}".`;
+          return;
+        }
+        
+        data.forEach(entry => {
+          tagResults.appendChild(displayEntry(entry));
+        });
+      } catch (error) {
+        document.getElementById('tag-results').innerHTML = `<pre>${JSON.stringify({ error: error.message }, null, 2)}</pre>`;
+      }
+    }
+
+    // Get entries by type
+    async function getEntriesByType() {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      const type = document.getElementById('filter-type').value;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal/type/${encodeURIComponent(type)}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        const data = await response.json();
+        
+        // Display type results
+        const typeResults = document.getElementById('type-results');
+        typeResults.innerHTML = '';
+        
+        if (data.length === 0) {
+          typeResults.textContent = `No entries found with type "${type}".`;
+          return;
+        }
+        
+        data.forEach(entry => {
+          typeResults.appendChild(displayEntry(entry));
+        });
+      } catch (error) {
+        document.getElementById('type-results').innerHTML = `<pre>${JSON.stringify({ error: error.message }, null, 2)}</pre>`;
       }
     }
 
