@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>COMMIT Journal API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 15px;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>COMMIT Journal API Test</h1>
+  
+  <div class="container">
+    <div class="card">
+      <h2>1. Register User</h2>
+      <div class="form-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" value="testuser">
+      </div>
+      <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" value="test@example.com">
+      </div>
+      <div class="form-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" value="password123">
+      </div>
+      <button onclick="registerUser()">Register</button>
+      <div class="form-group">
+        <h3>Response:</h3>
+        <pre id="register-response"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Login User</h2>
+      <div class="form-group">
+        <label for="login-email">Email:</label>
+        <input type="email" id="login-email" value="test@example.com">
+      </div>
+      <div class="form-group">
+        <label for="login-password">Password:</label>
+        <input type="password" id="login-password" value="password123">
+      </div>
+      <button onclick="loginUser()">Login</button>
+      <div class="form-group">
+        <h3>Response:</h3>
+        <pre id="login-response"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Create Journal Entry</h2>
+      <div class="form-group">
+        <label for="entry-content">Content:</label>
+        <textarea id="entry-content" rows="5">Today I started working on my new project. I feel excited about the possibilities.</textarea>
+      </div>
+      <div class="form-group">
+        <label for="entry-type">Entry Type:</label>
+        <select id="entry-type">
+          <option value="context">Context</option>
+          <option value="objectives">Objectives</option>
+          <option value="mindmap">Mindmap</option>
+          <option value="ideate">Ideate</option>
+          <option value="track">Track</option>
+          <option value="unclassified">Unclassified</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="entry-tags">Tags (comma separated):</label>
+        <input type="text" id="entry-tags" value="work,project">
+      </div>
+      <button onclick="createEntry()">Create Entry</button>
+      <div class="form-group">
+        <h3>Response:</h3>
+        <pre id="create-entry-response"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>4. Get Journal Entries</h2>
+      <button onclick="getEntries()">Get Entries</button>
+      <div class="form-group">
+        <h3>Response:</h3>
+        <pre id="get-entries-response"></pre>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>5. Get Weekly Summary</h2>
+      <button onclick="getWeeklySummary()">Get Summary</button>
+      <div class="form-group">
+        <h3>Response:</h3>
+        <pre id="get-summary-response"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Store token after login
+    let authToken = '';
+    const API_BASE_URL = 'http://localhost:5002/api';
+
+    // Helper function to display JSON response
+    function displayResponse(elementId, data) {
+      document.getElementById(elementId).textContent = JSON.stringify(data, null, 2);
+    }
+
+    // Register user
+    async function registerUser() {
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await response.json();
+        displayResponse('register-response', data);
+
+        if (data.token) {
+          authToken = data.token;
+          alert('Registration successful! Token saved.');
+        }
+      } catch (error) {
+        displayResponse('register-response', { error: error.message });
+      }
+    }
+
+    // Login user
+    async function loginUser() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        displayResponse('login-response', data);
+
+        if (data.token) {
+          authToken = data.token;
+          alert('Login successful! Token saved.');
+        }
+      } catch (error) {
+        displayResponse('login-response', { error: error.message });
+      }
+    }
+
+    // Create journal entry
+    async function createEntry() {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      const content = document.getElementById('entry-content').value;
+      const entryType = document.getElementById('entry-type').value;
+      const tagsString = document.getElementById('entry-tags').value;
+      const tags = tagsString.split(',').map(tag => tag.trim());
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({ content, entryType, tags })
+        });
+
+        const data = await response.json();
+        displayResponse('create-entry-response', data);
+      } catch (error) {
+        displayResponse('create-entry-response', { error: error.message });
+      }
+    }
+
+    // Get journal entries
+    async function getEntries() {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        const data = await response.json();
+        displayResponse('get-entries-response', data);
+      } catch (error) {
+        displayResponse('get-entries-response', { error: error.message });
+      }
+    }
+
+    // Get weekly summary
+    async function getWeeklySummary() {
+      if (!authToken) {
+        alert('Please login first to get an authentication token.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/journal/summary/weekly`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        const data = await response.json();
+        displayResponse('get-summary-response', data);
+      } catch (error) {
+        displayResponse('get-summary-response', { error: error.message });
+      }
+    }
+  </script>
+</body>
+</html>
