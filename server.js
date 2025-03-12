@@ -12,7 +12,9 @@ const journalRoutes = require('./src/routes/journalRoutes');
 
 // Initialize Express app
 const app = express();
-const PORT = config.PORT || 5001;
+
+// Use port from .env file (5004)
+const PORT = process.env.PORT || 5004;
 
 // Connect to MongoDB
 connectDB();
